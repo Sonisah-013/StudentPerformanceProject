@@ -1,37 +1,69 @@
-Students Performance Analysis and Math Score Prediction
-Project Overview
-This project analyzes high school students' academic performance data to understand factors influencing math scores. Using Python, I performed exploratory data analysis, visualized relationships between variables, and built a machine learning model to predict math scores based on other features.
+# Student Performance Prediction Project
 
-Key Objectives
-Explore how variables like gender, race/ethnicity, parental education, lunch type, and test preparation affect math scores
+This project predicts student performance based on demographic and academic data. It includes **regression models** for predicting final grades, **classification models** for pass/fail prediction, and **clustering** for grouping students.
 
-Visualize data trends with heatmaps and boxplots for clear insights
+---
 
-Build and evaluate a linear regression model to predict math scores from available features
+## 📂 Dataset
 
-Data Source
-Dataset containing students’ demographic information and their scores in math, reading, and writing.
+The dataset used is `StudentsPerformance.csv`, which contains:
 
-Approach
-Data loaded and cleaned using Pandas
+| Column                       | Type       |
+|-------------------------------|-----------|
+| gender                        | categorical |
+| race/ethnicity                | categorical |
+| parental level of education   | categorical |
+| lunch                         | categorical |
+| test preparation course       | categorical |
+| math score                    | numeric   |
+| reading score                 | numeric   |
+| writing score                 | numeric   |
 
-Visualized feature correlations and score distributions using Seaborn and Matplotlib
+- `G3` (Final grade) is calculated as the **average of math, reading, and writing scores**.
+- Classification target `pass` is created: `1` if `G3 >= 50%`, else `0`.
 
-Categorical variables encoded for model compatibility
+---
 
-Data split into training and testing sets (80/20 split)
+## ⚙️ Features & Preprocessing
 
-Trained a Linear Regression model and evaluated using R² score and Mean Squared Error (MSE)
+- Label encoding for categorical features  
+- Feature scaling with `StandardScaler`  
+- Train/test split: 80/20  
 
-Saved predicted math scores to CSV for further analysis
+---
 
-Results
-The model achieved an R² score of approximately 0.88, indicating a strong fit to the data
+## 🤖 Models Trained
 
-Mean Squared Error was around 28.28, showing prediction accuracy
+### Regression Models (predict final grade `G3`)
+- Linear Regression  
+- Random Forest Regressor  
+- Gradient Boosting Regressor  
 
-Visualizations revealed clear trends, e.g., students who completed test preparation generally scored higher
+### Classification Models (Pass/Fail)
+- Logistic Regression  
+- Random Forest Classifier  
 
-Conclusion
-This project demonstrates effective use of Python and machine learning for educational data analysis and prediction. It highlights the importance of test preparation and demographic factors on student performance. The project can be extended by experimenting with other algorithms or deeper feature analysis.
+### Evaluation Metrics
+- MAE, RMSE, R² (Regression)  
+- Accuracy, Confusion Matrix, ROC Curve (Classification)  
 
+### Clustering
+- KMeans clustering to group students into 3 categories  
+
+---
+
+## 📊 Visualizations
+- Correlation heatmap  
+- Boxplots & histograms of grades  
+- Confusion matrix & ROC curve  
+- Scatter plot of student clusters  
+
+---
+
+## 💻 How to Run
+
+1. Clone the repository:
+
+```bash
+git clone https://github.com/your-username/StudentPerformanceProject.git
+cd StudentPerformanceProject
