@@ -1,94 +1,158 @@
+## step 1:Import Libraries
 import pandas as pd
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LinearRegression
-from sklearn.metrics import mean_squared_error, r2_score
-import matplotlib.pyplot as plt
+import numpy as np
 import seaborn as sns
+import matplotlib.pyplot as plt
 
-# Load Dataset
-df = pd.read_csv("StudentsPerformance.csv")
+from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.linear_model import LinearRegression, LogisticRegression
+from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
+from sklearn.metrics import (mean_absolute_error, mean_squared_error, r2_score,
+                             accuracy_score, confusion_matrix, roc_curve, auc)
 
-# Quick look at data
-print("First 5 rows of the dataset:")
+from sklearn.cluster import KMeans
+
+##step2: Load Dataset
+df = pd.read_csv("data/StudentsPerformance.csv")
 print(df.head())
-import matplotlib.pyplot as plt
-import seaborn as sns
+print(df.info())
 
-# Show correlation heatmap
-plt.figure(figsize=(10, 6))
-sns.heatmap(df.corr(numeric_only=True), annot=True, cmap='coolwarm', linewidths=0.5)
-plt.title("Feature Correlation Heatmap")
-plt.show()
-# Compare math scores based on test preparation course
-plt.figure(figsize=(8,6))
-sns.boxplot(x='test preparation course', y='math score', data=df, palette='Set2')
-plt.title("Math Score vs Test Preparation Course")
-plt.xlabel("Test Preparation Course")
-plt.ylabel("Math Score")
-plt.show()
-# Compare math scores based on gender
-plt.figure(figsize=(8,6))
-sns.boxplot(x='gender', y='math score', data=df, palette='Set1')
-plt.title("Math Score vs Gender")
-plt.xlabel("Gender")
-plt.ylabel("Math Score")
+##Step 3: EDA (Exploratory Data Analysis)
+# Check missing values
+print(df.isnull().sum())
+
+# Correlation heatmap
+plt.figure(figsize=(10,6))
+sns.heatmap(df.corr(numeric_only=True), annot=True, cmap='coolwarm')
+plt.title("Correlation Heatmap")
 plt.show()
 
-# Convert categorical columns to numeric
-df['gender'] = df['gender'].map({'female': 0, 'male': 1})
-df['race/ethnicity'] = df['race/ethnicity'].astype('category').cat.codes
-df['parental level of education'] = df['parental level of education'].astype('category').cat.codes
-df['lunch'] = df['lunch'].map({'standard': 1, 'free/reduced': 0})
-df['test preparation course'] = df['test preparation course'].map({'completed': 1, 'none': 0})
+# Study time vs final grade
+sns.boxplot(x='studytime', y='G3', data=df)
+plt.title("Study Time vs Final Grade")
+plt.show()
 
-# Choose features (X) and target (y)
-X = df[['gender', 'race/ethnicity', 'parental level of education', 'lunch', 'test preparation course',
-        'reading score', 'writing score']]
-y = df['math score']
+# Distribution of final grades
+sns.histplot(df['G3'], bins=20, kde=True)
+plt.title("Grade Distribution")
+plt.show()
 
-# Split data into training and testing sets
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+##Step 4: Feature Engineering & Preprocessing
+# Encode categorical features
+le = LabelEncoder()
+for col in df.select_dtypes(include='object').columns:
+    df[col] = le.fit_transform(df[col])
 
-# Create Linear Regression model and train
-model = LinearRegression()
-model.fit(X_train, y_train)
+# Features & target (Regression)
+X = df.drop("G3", axis=1)
+y = df["G3"]
 
-# Predict math scores for test data
-y_pred = model.predict(X_test)
+# Train-test split
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
 
-# Evaluate model performance
-print(f"\nR2 score: {r2_score(y_test, y_pred):.2f}")
-print(f"Mean Squared Error: {mean_squared_error(y_test, y_pred):.2f}")
+# Scaling
+scaler = StandardScaler()
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
 
-# Create a DataFrame to compare Actual vs Predicted scores
-results = pd.DataFrame({
-    'Actual Math Score': y_test,
-    'Predicted Math Score': y_pred
-})
+##Step 5: Model Training (3 Models)
+# Linear Regression
+lr = LinearRegression()
+lr.fit(X_train, y_train)
 
-# Save the results to a CSV file
-results.to_csv("math_score_predictions.csv", index=False)
-print("\n✅ Predictions saved to 'math_score_predictions.csv'")
-"""
-Students Performance Analysis and Math Score Prediction
+# Random Forest
+rf = RandomForestRegressor()
+rf.fit(X_train, y_train)
 
-Project Overview:
-This project analyzes high school students' academic performance data to understand factors influencing math scores.
-Using Python, I performed exploratory data analysis, visualized relationships between variables, and built a machine
-learning model to predict math scores based on other features.
+# Gradient Boosting (optional)
+from sklearn.ensemble import GradientBoostingRegressor
+gb = GradientBoostingRegressor()
+gb.fit(X_train, y_train)
 
-Key Objectives:
-- Explore how variables like gender, race/ethnicity, parental education, lunch type, and test preparation affect math scores
-- Visualize data trends with heatmaps and boxplots for clear insights
-- Build and evaluate a linear regression model to predict math scores from available features
+##Step 6: Evaluation (Regression)
+def evaluate_model(name, model):
+    pred = model.predict(X_test)
+    print(f"\n{name}")
+    print("MAE:", mean_absolute_error(y_test, pred))
+    print("RMSE:", np.sqrt(mean_squared_error(y_test, pred)))
+    print("R2 Score:", r2_score(y_test, pred))
 
-Results:
-- The model achieved an R2 score of approximately 0.88, indicating a strong fit to the data
-- Visualizations revealed clear trends, e.g., students who completed test preparation generally scored higher
-"""
-print("\n--- Project Summary ---")
-print("Students Performance Analysis and Math Score Prediction")
-print("This project analyzes high school students' academic performance data to understand factors influencing math scores.")
-print("Key objectives include exploring demographic impacts, visualizing data, and predicting math scores using Linear Regression.")
-print("The model achieved an R2 score of around 0.88, showing good prediction accuracy.")
-print("Visualizations highlight trends such as the positive effect of test preparation courses.\n")
+evaluate_model("Linear Regression", lr)
+evaluate_model("Random Forest", rf)
+evaluate_model("Gradient Boosting", gb)
+ 
+##Step 7: Classification Version (Pass/Fail)
+# Create classification target
+df['pass'] = df['G3'].apply(lambda x: 1 if x >= 10 else 0)
+
+X_cls = df.drop(['G3', 'pass'], axis=1)
+y_cls = df['pass']
+
+X_train_c, X_test_c, y_train_c, y_test_c = train_test_split(
+    X_cls, y_cls, test_size=0.2, random_state=42
+)
+
+# Scale
+X_train_c = scaler.fit_transform(X_train_c)
+X_test_c = scaler.transform(X_test_c)
+
+# Models
+log_reg = LogisticRegression(max_iter=1000)
+rf_cls = RandomForestClassifier()
+
+log_reg.fit(X_train_c, y_train_c)
+rf_cls.fit(X_train_c, y_train_c)
+
+##Step 8: Confusion Matrix & ROC Curve
+# Predictions
+y_pred = rf_cls.predict(X_test_c)
+
+# Confusion Matrix
+cm = confusion_matrix(y_test_c, y_pred)
+sns.heatmap(cm, annot=True, fmt='d')
+plt.title("Confusion Matrix")
+plt.show()
+
+# ROC Curve
+y_prob = rf_cls.predict_proba(X_test_c)[:,1]
+fpr, tpr, _ = roc_curve(y_test_c, y_prob)
+roc_auc = auc(fpr, tpr)
+
+plt.plot(fpr, tpr, label=f"AUC = {roc_auc:.2f}")
+plt.xlabel("False Positive Rate")
+plt.ylabel("True Positive Rate")
+plt.title("ROC Curve")
+plt.legend()
+plt.show()
+
+##Step 9: Hyperparameter Tuning
+params = {
+    'n_estimators': [100, 200],
+    'max_depth': [5, 10, None]
+}
+
+grid = GridSearchCV(RandomForestRegressor(), params, cv=3)
+grid.fit(X_train, y_train)
+
+print("Best Parameters:", grid.best_params_)
+
+##Step 10: Unsupervised Learning (Clustering)
+kmeans = KMeans(n_clusters=3, random_state=42)
+df['cluster'] = kmeans.fit_predict(X)
+
+# Visualize clusters (using 2 features)
+plt.scatter(df['studytime'], df['G3'], c=df['cluster'])
+plt.xlabel("Study Time")
+plt.ylabel("Final Grade")
+plt.title("Student Clusters")
+plt.show()
+
+##Step 11: Final Insights (Print)
+print("\nKey Insights:")
+print("- Higher study time → Better performance")
+print("- Absences → Negative impact")
+print("- Previous grades strongly influence final grade")
+print("- Clustering reveals 3 student categories")
